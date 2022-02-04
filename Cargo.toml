@@ -2,13 +2,18 @@
 name = "crust"
 version = "0.1.0"
 authors = ["thrizzle. <thrizzle@terabyteis.me>"]
+edition = "2021"
 
 [dependencies]
-rocket = "0.4.6"
 reqwest = { version = "0.11", features = ["json", "blocking"] }
 memoize = "0.2.1"
 rocket_contrib = {version = "0.4.10", features = ["json"]}
 serde = {version="1.0", features=["derive"]}
 lru = "0.6.1"
+actix-web = "3.3.3"
+http = "0.2.6"
+http-cache-reqwest = "0.2.1"
+reqwest-middleware = "0.1.4"
+lazy_static = "1.4.0"
 
 [features]

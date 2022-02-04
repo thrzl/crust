@@ -1,19 +1,12 @@
-#![feature(decl_macro)]
-
-#[macro_use] extern crate rocket;
-extern crate reqwest;
-extern crate rocket_contrib;
-extern crate memoize as m;
-extern crate serde;
-extern crate lru;
-use rocket_contrib::json::Json;
+use actix_web::{get, App, web, HttpServer, Responder, HttpResponse};
+use http::StatusCode;
+use reqwest::Client;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use http_cache_reqwest::{Cache, CacheMode, CACacheManager, HttpCache};
 use std::collections::HashMap;
 use serde::Serialize;
-use lru::LruCache;
-use std::cell::UnsafeCell;
+use lazy_static::lazy_static;
 
-
-// let http: reqwest::Client = reqwest::Client::new();
 
 #[derive(Serialize)]
 struct User {
@@ -21,45 +14,54 @@ struct User {
   uuid: String,
 }
 
-
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+#[get("/hello")]
+async fn index() -> impl Responder {
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(r#"<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/Yw6u6YkTgQ4?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>"#)
 }
-
-// #[get("/nametest")]
-// fn nametest(name: String) -> String {
-//     println!("Hello {name}")
-// }
 
 #[get("/user/<name>")]
-fn user_f_name(cache: rocket::State<&mut LruCache<String, User>>, http: rocket::State<reqwest::blocking::Client>, name: String) -> Json<User> {
-    
+async fn user(name: web::Path<String>) -> impl Responder {
+    lazy_static! {
+        static ref CLIENT: ClientWithMiddleware = ClientBuilder::new(Client::new()).with(
+            Cache(
+                HttpCache {
+                    mode: CacheMode::NoCache,
+                    manager: CACacheManager::default(),
+                    options: None,
+                }
+            )
+        ).build();
+    }
     let req_url = format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
     let u: User;
-    let resp_data: HashMap<String, String>;
-    let mut c = &*cache;
-    if (*c).get_mut(&name).is_none() {
-        let req_url = format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
-        let resp = http.get(req_url).send();
-        let resp_data = resp.unwrap().json::<HashMap<String, String>>().unwrap();
-        let uuid = resp_data.get("id").unwrap();
-        let u = User {
-            name: name,
-            uuid: uuid.to_string(),
-        };
-        cache.put(name, u);
-    } else {
-        ()
+    let req_url = format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
+    let resp = CLIENT.get(req_url).send().await.unwrap();
+    let resp_data = resp.json::<HashMap<String, String>>().await.unwrap();
+    let uuid = resp_data.get("id").unwrap();
+    let u = User {
+        name: name.to_string(),
+        uuid: uuid.to_string(),
     };
-    format!("Hello {name}, your uuid is {uuid}", name=name, uuid=u.uuid);
-    let user = User{name: resp_data.get("name").unwrap().to_string(), uuid: resp_data.get("id").unwrap().to_string()};
-    Json(user)
+    web::Json(u)
 }
 
-fn main() {
-    let http: reqwest::blocking::Client = reqwest::blocking::Client::new();
-    let mut user_cache: LruCache<String, User> = LruCache::new(100);
-    rocket::ignite().manage(http).manage(user_cache).mount("/", routes![index, user_f_name]).launch();
-    println!("🪨 ready")
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    lazy_static! {
+        static ref CLIENT: ClientWithMiddleware = ClientBuilder::new(Client::new()).with(
+            Cache(
+                HttpCache {
+                    mode: CacheMode::NoCache,
+                    manager: CACacheManager::default(),
+                    options: None,
+                }
+            )
+        ).build();
+    }
+    HttpServer::new(|| App::new().service(index).service(user))
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }
