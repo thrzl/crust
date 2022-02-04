@@ -5,15 +5,19 @@ authors = ["thrizzle. <thrizzle@terabyteis.me>"]
 edition = "2021"
 
 [dependencies]
-reqwest = { version = "0.11", features = ["json", "blocking"] }
-memoize = "0.2.1"
-rocket_contrib = {version = "0.4.10", features = ["json"]}
+reqwest = { version = "0.11", features = ["json"] }
+# memoize = "0.2.1"
+# rocket_contrib = {version = "0.4.10", features = ["json"]}
 serde = {version="1.0", features=["derive"]}
-lru = "0.6.1"
-actix-web = "3.3.3"
 http = "0.2.6"
-http-cache-reqwest = "0.2.1"
+http-cache-reqwest = {version="0.2.1", features=["manager-moka"]}
 reqwest-middleware = "0.1.4"
 lazy_static = "1.4.0"
+tokio = "1.16.1"
+moka = { version = "0.7.1", features = ["future"] }
+
+[dependencies.actix-web]
+git = "https://github.com/actix/actix-web"
+tag = "web-v4.0.0-rc.2"
 
 [features]

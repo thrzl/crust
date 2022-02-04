@@ -21,7 +21,7 @@ async fn index() -> impl Responder {
         .body(r#"<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/Yw6u6YkTgQ4?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>"#)
 }
 
-#[get("/user/<name>")]
+#[get("/user/{name}")]
 async fn user(name: web::Path<String>) -> impl Responder {
     lazy_static! {
         static ref CLIENT: ClientWithMiddleware = ClientBuilder::new(Client::new()).with(
@@ -34,8 +34,6 @@ async fn user(name: web::Path<String>) -> impl Responder {
             )
         ).build();
     }
-    let req_url = format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
-    let u: User;
     let req_url = format!("https://api.mojang.com/users/profiles/minecraft/{}", name);
     let resp = CLIENT.get(req_url).send().await.unwrap();
     let resp_data = resp.json::<HashMap<String, String>>().await.unwrap();
