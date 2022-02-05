@@ -6,15 +6,12 @@ edition = "2021"
 
 [dependencies]
 reqwest = { version = "0.11", features = ["json"] }
-# memoize = "0.2.1"
-# rocket_contrib = {version = "0.4.10", features = ["json"]}
 serde = {version="1.0", features=["derive"]}
-http = "0.2.6"
-http-cache-reqwest = {version="0.2.1", features=["manager-moka"]}
+http-cache-reqwest = "0.2.1"
 reqwest-middleware = "0.1.4"
 lazy_static = "1.4.0"
 tokio = "1.16.1"
-moka = { version = "0.7.1", features = ["future"] }
+http-cache = "0.4.1"
 
 [dependencies.actix-web]
 git = "https://github.com/actix/actix-web"

@@ -1,5 +1,4 @@
-use actix_web::{get, App, web, HttpServer, Responder, HttpResponse};
-use http::StatusCode;
+use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http};
 use reqwest::Client;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use http_cache_reqwest::{Cache, CacheMode, CACacheManager, HttpCache};
@@ -16,7 +15,7 @@ struct User {
 
 #[get("/hello")]
 async fn index() -> impl Responder {
-    HttpResponse::build(StatusCode::OK)
+    HttpResponse::build(http::StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(r#"<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/Yw6u6YkTgQ4?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>"#)
 }
@@ -57,7 +56,7 @@ async fn main() -> std::io::Result<()> {
                 }
             )
         ).build();
-    }
+    };
     HttpServer::new(|| App::new().service(index).service(user))
         .bind("127.0.0.1:8080")?
         .run()
