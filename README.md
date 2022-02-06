@@ -15,7 +15,7 @@
     a real fast minecraft api (huge emphasis on <b>W I P</b>!!!)
     <br />
   </p>
-  <p align="center">read the [docs](https://github.com/terabyte3/crust/blob/master/docs.md/)</p>
+  <p align="center"><em>read the <a href="https://github.com/terabyte3/crust/blob/master/docs.md/">docs</a></em></p>
 </p>
 
 
