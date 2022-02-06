@@ -10,6 +10,7 @@ cached = "0.30.0"
 miniserde = "0.1.20"
 actix-web = "4.0.0-rc.2"
 actix-files = "0.6.0-beta.16"
+env_logger = "0.9.0"
 # [dependencies.actix-web]
 # git = "https://github.com/actix/actix-web"
 # tag = "web-v4.0.0-rc.2"

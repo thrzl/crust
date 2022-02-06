@@ -1,8 +1,9 @@
-use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http};
+use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::Logger};
 use reqwest::get;
 use std::collections::HashMap;
 use miniserde::{Serialize, Deserialize, json};
 use cached::proc_macro::cached;
+use env_logger;
 
 #[derive(Serialize, Deserialize)]
 struct User {
@@ -10,7 +11,7 @@ struct User {
   uuid: String,
 }
 
-#[cached(size=100)]
+#[cached(size=1000)]
 async fn request(url: String) -> HashMap<String, String> {
     // if cache.find(url).is_some() {
     //     println!("Cache hit for {}", url);
@@ -55,13 +56,13 @@ async fn user(name: web::Path<String>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     println!("Starting on port {}", 8080);
     HttpServer::new(
         || {App::new()
+            .wrap(Logger::default())
             .service(hello)
             .service(user)
-            // .service(index)
-            // .service(Files::new("/assets", "../templates/assets").show_files_listing())
         }
     )
     .bind("0.0.0.0:8080")?
