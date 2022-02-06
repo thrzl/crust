@@ -6,7 +6,7 @@
 <br />
 <p align="center">
   <a href="crust.terabyteis.me">
-    <img src="https://crust.terabyteis.me/assets/img/copper_block.png" alt="vertigo project logo" width="80">
+    <img src="assets/copper_block.png" alt="copper block" width="80">
   </a>
 
   <h3 align="center"><b>crust</b></h3>
@@ -15,6 +15,7 @@
     a real fast minecraft api (huge emphasis on <b>W I P</b>!!!)
     <br />
   </p>
+  <p align="center">read the [docs](/docs.md)</p>
 </p>
 
 
@@ -81,3 +82,5 @@ distributed under the apache 2.0 license. see [`license`](https://github.com/ter
 ## acknowledgements
 * [gitmoji](https://gitmoji.dev)
 * [choose an open source license](https://choosealicense.com)
+
+###### **thrizzle. 2022**
