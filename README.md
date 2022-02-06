@@ -75,7 +75,7 @@ contributions are what make the open source community such an amazing place to l
 <!-- license -->
 ## license
 
-distributed under the apache 2.0 license. see `license` for more information.
+distributed under the apache 2.0 license. see [`license`](https://github.com/terabyte3/crust/blob/master/LICENSE) for more information.
 
 <!-- acknowledgements -->
 ## acknowledgements
