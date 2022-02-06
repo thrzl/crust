@@ -1,4 +1,3 @@
-use actix_files::Files;
 use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http};
 use reqwest::get;
 use std::collections::HashMap;
