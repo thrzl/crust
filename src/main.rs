@@ -1,4 +1,5 @@
 use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::Logger};
+use actix_web_lab::web as web_lab;
 use reqwest::get;
 use std::collections::HashMap;
 use miniserde::{Serialize, Deserialize, json};
@@ -61,6 +62,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(
         || {App::new()
             .wrap(Logger::default())
+            .service(web::scope("/").service(web_lab::redirect("/", "https://crust.terabyteis.me")))
             .service(hello)
             .service(user)
         }
