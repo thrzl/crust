@@ -1,23 +1,44 @@
+bench = []
+test = []
+example = []
+
+[[bin]]
+path = "src/main.rs"
+name = "crust"
+test = true
+doctest = true
+bench = true
+doc = true
+plugin = false
+proc-macro = false
+harness = true
+edition = "2021"
+required-features = []
+
 [package]
 name = "crust"
-version = "0.1.0"
-authors = ["thrizzle. <thrizzle@terabyteis.me>"]
 edition = "2021"
+version = "0.0.1"
+authors = ["thrizzle. <thrizzle@terabyteis.me>"]
+keywords = []
+categories = []
+autobins = true
+autoexamples = true
+autotests = true
+autobenches = true
+publish = true
 
 [dependencies]
-reqwest = { version = "0.11"}
-cached = "0.30.0"
-miniserde = "0.1.20"
-actix-web = "4.0.0-rc.2"
 actix-files = "0.6.0-beta.16"
-env_logger = "0.9.0"
+actix-web = "4.0.0-rc.2"
 actix-web-lab = "0.9.0"
-# [dependencies.actix-web]
-# git = "https://github.com/actix/actix-web"
-# tag = "web-v4.0.0-rc.2"
+cached = "0.30.0"
+env_logger = "0.9.0"
+miniserde = "0.1.20"
 
-# [dependencies.actix-files]
-# git = "https://github.com/actix/actix-web"
-# tag = "files-v0.6.0-beta.16"
+[dependencies.reqwest]
+version = "0.11"
+features = []
+optional = false
 
 [features]
