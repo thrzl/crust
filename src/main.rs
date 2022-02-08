@@ -1,5 +1,5 @@
 use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::Logger};
-use actix_web_lab::web as web_lab;
+// use actix_web_lab::web as web_lab;
 use reqwest::get;
 use std::collections::HashMap;
 use miniserde::{Serialize, Deserialize, json};
@@ -24,6 +24,12 @@ async fn request(url: String) -> HashMap<String, String> {
     let resp_data = json::from_str(&resp.text().await.unwrap()).unwrap();
     // cache.insert(url, resp_data.clone());
     resp_data
+}
+
+#[get("/")]
+async fn index() -> Result<HttpResponse, http::Error> {
+    Ok(HttpResponse::PermanentRedirect()
+    .append_header(("Location", "https://crust.terabyteis.me")).finish())
 }
 
 #[get("/hello")]
@@ -62,7 +68,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(
         || {App::new()
             .wrap(Logger::default())
-            // .service(web::scope("/").service(web_lab::redirect("/", "https://crust.terabyteis.me")))
+            .service(index)
             .service(hello)
             .service(user)
         }
