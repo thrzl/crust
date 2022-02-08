@@ -62,7 +62,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(
         || {App::new()
             .wrap(Logger::default())
-            .service(web::scope("/").service(web_lab::redirect("/", "https://crust.terabyteis.me")))
+            // .service(web::scope("/").service(web_lab::redirect("/", "https://crust.terabyteis.me")))
             .service(hello)
             .service(user)
         }
