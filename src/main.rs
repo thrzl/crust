@@ -1,10 +1,10 @@
 use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::Logger};
-// use actix_web_lab::web as web_lab;
 use reqwest::get;
 use std::collections::HashMap;
 use miniserde::{Serialize, Deserialize, json};
 use cached::proc_macro::cached;
 use env_logger;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 struct User {
@@ -14,15 +14,8 @@ struct User {
 
 #[cached(size=1000)]
 async fn request(url: String) -> HashMap<String, String> {
-    // if cache.find(url).is_some() {
-    //     println!("Cache hit for {}", url);
-    //     return cache.get(&url).unwrap().clone();
-    // }
     let resp = get(&url).await.unwrap();
-    // println!("Cache miss for {}", url);
-    // let resp_data = resp.text::<HashMap<String, String>>().await.unwrap();
     let resp_data = json::from_str(&resp.text().await.unwrap()).unwrap();
-    // cache.insert(url, resp_data.clone());
     resp_data
 }
 
@@ -41,22 +34,18 @@ async fn hello() -> impl Responder {
 
 #[get("/user/{name}")]
 async fn user(name: web::Path<String>) -> impl Responder {
-    // lazy_static! {
-    //     static ref CLIENT: ClientWithMiddleware = ClientBuilder::new(Client::new()).with(
-    //         Cache(
-    //             HttpCache {
-    //                 mode: CacheMode::NoCache,
-    //                 manager: CACacheManager::default(),
-    //                 options: None,
-    //             }
-    //         )
-    //     ).build();
-    // }
-    let resp_data = request(format!("https://api.mojang.com/users/profiles/minecraft/{}", name)).await;
-    let uuid = resp_data.get("id").unwrap();
+    let uuid = Uuid::parse_str(&name);
+    let resp_data = if uuid.is_ok() {
+        let r: HashMap<String, String> = request(format!("https://api.mojang.com/user/profile/minecraft/{}", &uuid.unwrap())).await;
+        r
+    } else {
+        let r: HashMap<String, String> = request(format!("https://api.mojang.com/users/profiles/minecraft/{}", name)).await;
+        r
+    };
+    let uuid = Uuid::parse_str(resp_data.get("id").unwrap()).unwrap();
     let u = User {
         name: name.to_string(),
-        uuid: uuid.to_string(),
+        uuid: uuid.to_hyphenated().to_string(),
     };
     json::to_string(&u)
 }
@@ -68,7 +57,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(
         || {App::new()
             .wrap(Logger::default())
-            .service(index)
+            // .service(index)
             .service(hello)
             .service(user)
         }
