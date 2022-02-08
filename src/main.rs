@@ -36,16 +36,23 @@ async fn hello() -> impl Responder {
 async fn user(name: web::Path<String>) -> impl Responder {
     let uuid = Uuid::parse_str(&name);
     let resp_data = if uuid.is_ok() {
-        let r: HashMap<String, String> = request(format!("https://api.mojang.com/user/profile/minecraft/{}", &uuid.unwrap())).await;
+        let r: HashMap<String, String> = request(format!("https://api.mojang.com/user/profile/{}", &uuid.unwrap())).await;
         r
     } else {
         let r: HashMap<String, String> = request(format!("https://api.mojang.com/users/profiles/minecraft/{}", name)).await;
         r
     };
-    let uuid = Uuid::parse_str(resp_data.get("id").unwrap()).unwrap();
+    let uuidm = Uuid::parse_str(resp_data.get("id").unwrap());
+    let uuid = if uuidm.is_ok() {
+        let u = uuidm.unwrap();
+        u.to_hyphenated().to_string()
+    } else {
+        let u = resp_data.get("id").unwrap();
+        u.to_owned()
+    };
     let u = User {
         name: name.to_string(),
-        uuid: uuid.to_hyphenated().to_string(),
+        uuid: uuid,
     };
     json::to_string(&u)
 }
@@ -57,7 +64,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(
         || {App::new()
             .wrap(Logger::default())
-            // .service(index)
+            .service(index)
             .service(hello)
             .service(user)
         }
