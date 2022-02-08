@@ -13,9 +13,9 @@ env:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: lukemathwalker/cargo-chef:latest-rust-bullseye
 
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo build --verbose --release
+      run: cargo chef prepare
