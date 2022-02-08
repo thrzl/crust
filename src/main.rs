@@ -64,7 +64,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(
         || {App::new()
             .wrap(Logger::default())
-            .service(index)
+            // .service(index)
             .service(hello)
             .service(user)
         }
