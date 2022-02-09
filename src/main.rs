@@ -1,15 +1,29 @@
-use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::Logger};
+use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::{Logger, ErrorHandlers}};
 use reqwest::get;
 use std::collections::HashMap;
 use miniserde::{Serialize, Deserialize, json};
 use cached::proc_macro::cached;
 use env_logger;
 use uuid::Uuid;
+use async_minecraft_ping::ConnectionConfig;
+use fastping_rs::{Pinger, PingResult};
 
 #[derive(Serialize, Deserialize)]
 struct User {
   name: String,
   uuid: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Server {
+    ping: i16,
+    address: String,
+    ipaddr: String,
+    players: i16,
+    maxplayers: i16,
+    motd: String,
+    favicon: String,
+    name: String,
 }
 
 #[cached(size=1000)]
@@ -19,10 +33,61 @@ async fn request(url: String) -> HashMap<String, String> {
     resp_data
 }
 
+async fn we_died() -> impl Responder {
+    let mut resp = HashMap::new();
+    resp.insert("error", "We died");
+    resp.insert("code", "500");
+    HttpResponse::InternalServerError().content_type("application/json").body(json::to_string(&resp))
+}
+
 #[get("/")]
 async fn index() -> Result<HttpResponse, http::Error> {
     Ok(HttpResponse::PermanentRedirect()
     .append_header(("Location", "https://crust.terabyteis.me")).finish())
+}
+
+#[get("/server/{hostname}")]
+async fn server(hostname: web::Path<String>) -> impl Responder {
+    // use async-minecraft-ping to ping server
+    let mut config = ConnectionConfig::build(hostname.to_string());
+    let connection = config.connect().await.unwrap();
+    let status = connection.status().await.unwrap();
+    let (pinger, results) = Pinger::new(None, Some(56)).unwrap();
+    pinger.add_ipaddr(&hostname.to_string());
+    pinger.run_pinger();
+    let res = results.recv().unwrap();
+    let resp = match res {
+        Idle => {
+            let mut resp = HashMap::new();
+            resp.insert("error", "Server is offline");
+            resp.insert("code", "500");
+            HttpResponse::InternalServerError().content_type("application/json").body(json::to_string(&resp))
+        },
+        Receive => {
+            let server = Server {
+                ping: resp.ping,
+                address: hostname.to_string(),
+                ipaddr: status.address,
+                players: status.players.online,
+                maxplayers: resp.maxplayers,
+                motd: resp.motd,
+                favicon: resp.favicon,
+                name: resp.name,
+            };
+            HttpResponse::InternalServerError().content_type("application/json").body(json::to_string(&resp))
+        }
+    };
+    results.addr
+    let mut server = Server {
+        ping: status.ping(),
+        address: hostname.to_string(),
+        ipaddr: status.ipaddr().unwrap(),
+        players: status.players,
+        maxplayers: status.maxplayers,
+        motd: status.motd,
+        favicon: "".to_string(),
+        name: "".to_string(),
+    };
 }
 
 #[get("/hello")]
@@ -67,6 +132,7 @@ async fn main() -> std::io::Result<()> {
             // .service(index)
             .service(hello)
             .service(user)
+            .service(server)
         }
     )
     .bind("0.0.0.0:8080")?
