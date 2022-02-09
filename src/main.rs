@@ -1,6 +1,6 @@
 use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::{Logger, ErrorHandlers}};
 use reqwest::get;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::mpsc::RecvError};
 use miniserde::{Serialize, Deserialize, json};
 use cached::proc_macro::cached;
 use env_logger;
@@ -16,14 +16,12 @@ struct User {
 
 #[derive(Serialize, Deserialize)]
 struct Server {
-    ping: i16,
-    address: String,
+    ping: u64,
+    host: String,
     ipaddr: String,
-    players: i16,
-    maxplayers: i16,
-    motd: String,
+    players: u32,
+    maxplayers: u32,
     favicon: String,
-    name: String,
 }
 
 #[cached(size=1000)]
@@ -47,7 +45,7 @@ async fn index() -> Result<HttpResponse, http::Error> {
 }
 
 #[get("/server/{hostname}")]
-async fn server(hostname: web::Path<String>) -> impl Responder {
+async fn server_info(hostname: web::Path<String>) -> impl Responder {
     // use async-minecraft-ping to ping server
     let mut config = ConnectionConfig::build(hostname.to_string());
     let connection = config.connect().await.unwrap();
@@ -55,39 +53,41 @@ async fn server(hostname: web::Path<String>) -> impl Responder {
     let (pinger, results) = Pinger::new(None, Some(56)).unwrap();
     pinger.add_ipaddr(&hostname.to_string());
     pinger.run_pinger();
-    let res = results.recv().unwrap();
-    let resp = match res {
-        Idle => {
+    // let motd = match status.status.description {
+    //     Object { text } => {
+    //         text
+    //     } else {
+    //         None
+    //     }
+    // };
+    let res = match results.recv() {
+        Ok(result) => match result {
+            PingResult::Idle { addr: _ } => {
+                let mut resp = HashMap::new();
+                resp.insert("error", "Requested server is offline");
+                resp.insert("code", "503");
+                HttpResponse::ServiceUnavailable().content_type("application/json").body(json::to_string(&resp))
+            },
+            PingResult::Receive { addr, rtt } => {
+                let server = Server {
+                    ping: rtt.as_secs()*1000,
+                    host: hostname.to_string(),
+                    ipaddr: addr.to_string(),
+                    players: status.status.players.online,
+                    maxplayers: status.status.players.max,
+                    favicon: status.status.favicon.unwrap(),
+                };
+                HttpResponse::Ok().content_type("application/json").body(json::to_string(&server))
+            }
+        },
+        _ => {
             let mut resp = HashMap::new();
-            resp.insert("error", "Server is offline");
+            resp.insert("error", "Something went wrong");
             resp.insert("code", "500");
             HttpResponse::InternalServerError().content_type("application/json").body(json::to_string(&resp))
         },
-        Receive => {
-            let server = Server {
-                ping: resp.ping,
-                address: hostname.to_string(),
-                ipaddr: status.address,
-                players: status.players.online,
-                maxplayers: resp.maxplayers,
-                motd: resp.motd,
-                favicon: resp.favicon,
-                name: resp.name,
-            };
-            HttpResponse::InternalServerError().content_type("application/json").body(json::to_string(&resp))
-        }
     };
-    results.addr
-    let mut server = Server {
-        ping: status.ping(),
-        address: hostname.to_string(),
-        ipaddr: status.ipaddr().unwrap(),
-        players: status.players,
-        maxplayers: status.maxplayers,
-        motd: status.motd,
-        favicon: "".to_string(),
-        name: "".to_string(),
-    };
+    res
 }
 
 #[get("/hello")]
@@ -116,7 +116,7 @@ async fn user(name: web::Path<String>) -> impl Responder {
         u.to_owned()
     };
     let u = User {
-        name: name.to_string(),
+        name: resp_data.get("name").unwrap().to_owned(),
         uuid: uuid,
     };
     json::to_string(&u)
@@ -132,7 +132,7 @@ async fn main() -> std::io::Result<()> {
             // .service(index)
             .service(hello)
             .service(user)
-            .service(server)
+            .service(server_info)
         }
     )
     .bind("0.0.0.0:8080")?
