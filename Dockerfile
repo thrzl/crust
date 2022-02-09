@@ -14,6 +14,6 @@ RUN cargo build --release --bin crust
 FROM debian:bullseye-slim AS runtime
 WORKDIR /crust
 COPY --from=builder /crust/target/release/crust /usr/local/bin
-RUN apt update
-RUN apt install ca-certificates -y
+RUN apt-get update
+RUN apt-get install ca-certificates -y
 ENTRYPOINT ["/usr/local/bin/crust"]
