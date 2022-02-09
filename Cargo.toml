@@ -43,4 +43,7 @@ version = "0.11"
 features = []
 optional = false
 
+[dev-dependencies]
+rusty-hook = "^0.11.2"
+
 [features]

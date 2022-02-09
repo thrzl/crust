@@ -1,0 +1,5 @@
+[hooks]
+pre-commit = "cargo chef prepare"
+
+[logging]
+verbose = true
