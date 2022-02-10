@@ -52,7 +52,7 @@ async fn user(name: web::Path<String>) -> impl Responder {
     };
     let u = User {
         name: resp_data.get("name").unwrap().to_owned(),
-        uuid: uuid,
+        uuid,
     };
     json::to_string(&u)
 }
