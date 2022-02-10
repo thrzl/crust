@@ -66,10 +66,12 @@ see the [open issues](https://github.com/terabyte3/crust/issues) for a list of p
 contributions are what make the open source community such an amazing place to learn, inspire, and create. any contributions you make are **greatly appreciated**.
 
 1. fork the project
-2. create your feature branch (`git checkout -b feature/amazingfeature`)
-3. commit your changes (`git commit -m 'add some amazingfeature'`)
-4. push to the branch (`git push origin feature/amazingfeature`)
-5. open a pull request
+2. install [`cargo-chef`](https://lib.rs/crates/cargo-chef)
+3. create your feature branch (`git checkout -b feature/amazingfeature`)
+4. run `cargo chef prepare`
+5. commit your changes (`git commit -m 'add some amazingfeature'`)
+6. push to the branch (`git push origin feature/amazingfeature`)
+7. open a pull request
 
 
 
