@@ -61,8 +61,7 @@ async fn user(name: web::Path<String>) -> impl Responder {
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     println!("Starting on port {}", 8080);
-    HttpServer::new(
-        || {App::new()
+    HttpServer::new(|| {App::new()
             .wrap(Logger::default())
             // .service(index)
             .service(hello)
