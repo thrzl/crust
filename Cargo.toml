@@ -1,40 +1,17 @@
-bench = []
-test = []
-example = []
-
-[[bin]]
-path = "src/main.rs"
-name = "crust"
-test = true
-doctest = true
-bench = true
-doc = true
-plugin = false
-proc-macro = false
-harness = true
-edition = "2021"
-required-features = []
-
 [package]
-name = "crust"
+name = "pinnd"
 edition = "2021"
 version = "0.0.1"
 authors = ["thrizzle. <thrizzle@terabyteis.me>"]
-keywords = []
+keywords = ["github", "pinnedrepo", "pinned", "repo", "gh"]
 categories = []
-autobins = true
-autoexamples = true
-autotests = true
-autobenches = true
-publish = true
 
 [dependencies]
-actix-files = "0.6.0-beta.16"
 actix-web = "4.0.0-rc.2"
 cached = "0.30.0"
 env_logger = "0.9.0"
-miniserde = "0.1.20"
 select = "0.5.0"
+microserde = "0.1.13"
 
 [dependencies.reqwest]
 version = "0.11"
