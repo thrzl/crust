@@ -1,67 +1,28 @@
-use actix_web::{get, http, middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, App, web, HttpServer, Responder, HttpResponse, http, middleware::Logger};
+use reqwest::get;
+use std::collections::HashMap;
+use miniserde::{Serialize, Deserialize, json};
 use cached::proc_macro::cached;
 use env_logger;
-use microserde::json;
-use reqwest::get;
-use select::document::Document;
-use select::predicate::{Attr, Class};
-use std::collections::HashMap;
+use uuid::Uuid;
 
-#[cached(size = 1000)]
-async fn get_pinned(u: String) -> Vec<HashMap<String, String>> {
-    let resp = get(format!("https://github.com/{u}")).await.unwrap();
-    let document = Document::from(&resp.text().await.unwrap().to_owned()[..]);
-    let mut repos: Vec<_> = Vec::new();
-    document
-        .find(Class("pinned-item-list-item"))
-        .for_each(|node| {
-            let mut repo = HashMap::new();
-            node.find(Class("repo")).for_each(|node| {
-                repo.insert("name".to_string(), node.text().to_string());
-            });
-            node.find(Class("pinned-item-desc")).for_each(|node| {
-                repo.insert("description".to_string(), node.text().trim().to_string());
-            });
-            node.find(Attr("itemprop", "programmingLanguage"))
-                .for_each(|node| {
-                    repo.insert("language".to_string(), node.text().to_string());
-                });
-            node.find(Class("repo-language-color")).for_each(|node| {
-                repo.insert(
-                    "languageColor".to_string(),
-                    node.attr("style")
-                        .unwrap()
-                        .to_string()
-                        .replace("background-color: ", ""),
-                );
-            });
-            node.find(Class("pinned-item-meta")).for_each(|node| {
-                let l = node.attr("href").unwrap_or("");
-                if !l.is_empty() {
-                    if l.contains("/network/members") {
-                        repo.insert("forks".to_string(), node.text().trim().to_string());
-                    } else if l.contains("/stargazers") {
-                        repo.insert("stars".to_string(), node.text().trim().to_string());
-                    }
-                };
-            });
-            if !repo.contains_key("stars") {
-                repo.insert("stars".to_string(), "0".to_string());
-            }
-            if !repo.contains_key("forks") {
-                repo.insert("forks".to_string(), "0".to_string());
-            }
-            repos.push(repo);
-        });
+#[derive(Serialize, Deserialize)]
+struct User {
+  name: String,
+  uuid: String,
+}
 
-    repos
+#[cached(size=1000)]
+async fn request(url: String) -> HashMap<String, String> {
+    let resp = get(&url).await.unwrap();
+    let resp_data = json::from_str(&resp.text().await.unwrap()).unwrap();
+    resp_data
 }
 
 #[get("/")]
 async fn index() -> Result<HttpResponse, http::Error> {
     Ok(HttpResponse::PermanentRedirect()
-        .append_header(("Location", "https://crust.terabyteis.me"))
-        .finish())
+    .append_header(("Location", "https://crust.terabyteis.me")).finish())
 }
 
 #[get("/hello")]
@@ -71,24 +32,43 @@ async fn hello() -> impl Responder {
         .body(r#"<iframe width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/Yw6u6YkTgQ4?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>"#)
 }
 
-#[get("/{user}")]
-async fn user(user: web::Path<String>) -> impl Responder {
-    let r: Vec<HashMap<String, String>> = get_pinned(user.to_string()).await;
-    json::to_string(&r)
+#[get("/user/{name}")]
+async fn user(name: web::Path<String>) -> impl Responder {
+    let uuid = Uuid::parse_str(&name);
+    let resp_data = if uuid.is_ok() {
+        let r: HashMap<String, String> = request(format!("https://api.mojang.com/user/profile/{}", &uuid.unwrap())).await;
+        r
+    } else {
+        let r: HashMap<String, String> = request(format!("https://api.mojang.com/users/profiles/minecraft/{}", name)).await;
+        r
+    };
+    let uuidm = Uuid::parse_str(resp_data.get("id").unwrap());
+    let uuid = if uuidm.is_ok() {
+        let u = uuidm.unwrap();
+        u.to_hyphenated().to_string()
+    } else {
+        let u = resp_data.get("id").unwrap();
+        u.to_owned()
+    };
+    let u = User {
+        name: resp_data.get("name").unwrap().to_owned(),
+        uuid,
+    };
+    json::to_string(&u)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     println!("Starting on port {}", 8080);
-    HttpServer::new(|| {
-        App::new()
+    HttpServer::new(|| {App::new()
             .wrap(Logger::default())
             // .service(index)
             .service(hello)
             .service(user)
-    })
+        }
+    )
     .bind("0.0.0.0:8080")?
     .run()
-    .await
+    .await        
 }
