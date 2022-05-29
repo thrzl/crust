@@ -4,19 +4,27 @@ use std::collections::HashMap;
 use miniserde::{Serialize, Deserialize, json};
 use cached::proc_macro::cached;
 use env_logger;
-use uuid::Uuid;
+use select::document::Document;
+use select::predicate::{Class, Name};
 
-#[derive(Serialize, Deserialize)]
-struct User {
-  name: String,
-  uuid: String,
-}
 
 #[cached(size=1000)]
-async fn request(url: String) -> HashMap<String, String> {
-    let resp = get(&url).await.unwrap();
-    let resp_data = json::from_str(&resp.text().await.unwrap()).unwrap();
-    resp_data
+async fn get_pinned(u: String) -> Vec<HashMap<String, String>> {
+    let resp = get(format!("https://github.com/{u}")).await.unwrap();
+    let document = Document::from(&resp.text().await.unwrap().to_owned()[..]);
+    let mut repos: Vec<_> = Vec::new();
+    document.find(Class("pinned-item-list-item"))
+        .for_each(|node| {
+            let mut repo = HashMap::new();
+            node.find(Class("repo"))
+                .for_each(|node| {
+                    repo.insert("name".to_string(), node.text().to_string());
+                });
+            let repoData = get("https://api.github.com/repos/".to_string() + &repo["name"]).await.unwrap();
+            repos.push(repo);
+        });
+    
+    repos
 }
 
 #[get("/")]
