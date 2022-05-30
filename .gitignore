@@ -1,2 +1,4 @@
 /target
 .env
+.cargo
+fleet.toml

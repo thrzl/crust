@@ -1,9 +1,9 @@
 [package]
-name = "pinnd"
+name = "crust"
 edition = "2021"
 version = "0.0.1"
 authors = ["thrizzle. <thrizzle@terabyteis.me>"]
-keywords = ["github", "pinnedrepo", "pinned", "repo", "gh"]
+keywords = []
 categories = []
 
 [dependencies]
